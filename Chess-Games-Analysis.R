@@ -99,6 +99,16 @@ hist(chess_df$My_Rank[chess_df$My_Result=="Won"], col = 'DodgerBlue', add=T)
 hist(chess_df$Opp_Rank[chess_df$My_Result=="Loss"], col = 'Salmon', xlab = 'Rating Distribution (Opponent is Red)', main = 'My ELO Rating vs Opponents - When I Lose')
 hist(chess_df$My_Rank[chess_df$My_Result=="Loss"], col = 'DodgerBlue', add=T)
 
+##### Playin around with sequences........
+
+seq = chess_df$Sequence[1]
+col = chess_df$My_Color[1]
+if (col == 'Black')
+{
+
+}
+
+################# Using the rchess lib #################
 
 chesswc <- chess_df$Sequence %>% mutate(game_id = seq(nrow(.)))
 chess_df$game_id = as.numeric(chess_df$Date)
@@ -134,14 +144,14 @@ x = chss$history_detail() %>%
 #chesswc <- chesswc %>% mutate(game_id = seq(nrow(.)))
 # 
 # pgn  = NA
-x = data(chesswc$pgn)
-
-
- dfmoves <- plyr::adply(chess_df %>% select(Sequence, game_id), .margins = 1, function(x){
-   chss <- Chess$new()
-   chss$load_pgn(x$Sequence)
-   chss$history_detail()
- }, .parallel = TRUE, .paropts = list(.packages = c("rchess")))
+# x = data(chesswc$pgn)
+# 
+# 
+#  dfmoves <- plyr::adply(chess_df %>% select(Sequence, game_id), .margins = 1, function(x){
+#    chss <- Chess$new()
+#    chss$load_pgn(x$Sequence)
+#    chss$history_detail()
+#  }, .parallel = TRUE, .paropts = list(.packages = c("rchess")))
 # 
 # 
 # dfmoves <- plyr::adply(chess_df %>% select(pgn, Date, My_Color, Opp_Color, My_Result), .margins = 1, function(x){

@@ -2,7 +2,6 @@ setwd("../UWDataScience-Spring2016")
 source("hp_helper.R")
 setwd("../Random-Analyses/")
 
-
 plot_speech_wordcloud = function (speech, title)
 {
   speech <- paste(speech, collapse=" ")
