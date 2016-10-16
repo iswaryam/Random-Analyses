@@ -1,6 +1,9 @@
 library(ggplot2)
 library(rchess)
 library(dplyr)
+
+#################
+###### Read pgn file 
 filename = "chess.txt"
 chess_txt = readChar(filename, file.info (filename)$size)
 x = read.delim(filename, header = FALSE, sep=" ")
@@ -10,6 +13,8 @@ chess_df = data.frame(Date=as.Date(character()), My_Color=as.character(), Opp_Co
                       Termination_Reason=as.character(), Sequence=as.character(), stringsAsFactors = FALSE)
 j = 1
 
+######################################################################################################
+###### Parsing pgn file and splitting columns
 for (i in 1:nrow(chess_txt)) {
   if (chess_txt[i,]=="[Event Live Chess]")
   {
@@ -78,6 +83,9 @@ for (i in 1:nrow(chess_txt)) {
 }
 head(chess_df)
 
+#####################################################################################
+#### Lets run some analytics on win vs loss
+
 table(chess_df$My_Color)
 table(chess_df$My_Result)
 table(chess_df$My_Result, chess_df$My_Color)
@@ -89,44 +97,79 @@ table(chess_df$Termination_Reason[chess_df$My_Result=="Loss"])
 table(chess_df$My_Result[chess_df$My_Rank < chess_df$Opp_Rank])
 table(chess_df$My_Result[chess_df$My_Rank >= chess_df$Opp_Rank])
 
-
+#####################################################################################
+#### Plot my ranks against my opponents  (fun surprise: it's a notmal distribution!)
 hist(chess_df$Opp_Rank, col = 'Salmon', xlab = 'Rating Distribution (Opponent is Red)', main = 'My ELO Rating vs Opponents - ALL')
 hist(chess_df$My_Rank, col = 'DodgerBlue', add=T)
 
-hist(chess_df$Opp_Rank[chess_df$My_Result=="Won"], col = 'Salmon', xlab = 'Rating Distribution (Opponent is Red)', main = 'My ELO Rating vs Opponents - When I Win')
-hist(chess_df$My_Rank[chess_df$My_Result=="Won"], col = 'DodgerBlue', add=T)
+plot(chess_df$My_Rank[chess_df$My_Result=="Won"], chess_df$Opp_Rank[chess_df$My_Result=="Won"],col = 'DarkGreen', pch=19
+     ,xlab = 'My Rank', ylab = 'Opponent Rank')
+par(new=T)
+plot(chess_df$My_Rank[chess_df$My_Result=="Loss"], chess_df$Opp_Rank[chess_df$My_Result=="Loss"],col = 'Red', pch=19
+     ,xlab = 'My Rank', ylab = 'Opponent Rank', yaxt='n', xaxt='n', main='Red = Loss; Green = Win')
 
-hist(chess_df$Opp_Rank[chess_df$My_Result=="Loss"], col = 'Salmon', xlab = 'Rating Distribution (Opponent is Red)', main = 'My ELO Rating vs Opponents - When I Lose')
-hist(chess_df$My_Rank[chess_df$My_Result=="Loss"], col = 'DodgerBlue', add=T)
+#hist(chess_df$Opp_Rank[chess_df$My_Result=="Won"], col = 'Salmon', xlab = 'Rating Distribution (Opponent is Red)', main = 'My ELO Rating vs Opponents - When I Win')
+#hist(chess_df$My_Rank[chess_df$My_Result=="Won"], col = 'DodgerBlue', add=T)
 
+#hist(chess_df$Opp_Rank[chess_df$My_Result=="Loss"], col = 'Salmon', xlab = 'Rating Distribution (Opponent is Red)', main = 'My ELO Rating vs Opponents - When I Lose')
+#hist(chess_df$My_Rank[chess_df$My_Result=="Loss"], col = 'DodgerBlue', add=T)
+
+#####################################################################################
 ##### Playin around with sequences........
+loss <- vector("list", 50)
+win <- vector("list", 50)
 
-seq = chess_df$Sequence[1]
-col = chess_df$My_Color[1]
-if (col == 'Black')
-{
-
+for (x in 1:nrow(chess_df))
+  {
+  seq = chess_df$Sequence[x]
+  col = chess_df$My_Color[x]
+  res = chess_df$My_Result[x]
+  seq_array <- regmatches(seq, gregexpr(".[A-z|+|0-9]+ ", seq, perl=TRUE));#seq_array
+  seq_array <- unlist(seq_array)
+  seq_array <- gsub(".","",seq_array, fixed=TRUE)
+  seq_array <- gsub(" ","",seq_array, fixed=TRUE)
+  
+  seq_split <- split(seq_array, 1:2)
+  
+  if (col == 'Black')
+    {
+      myseq <- seq_split[2]
+    }else
+    {
+      myseq <- seq_split[1]
+    }
+  names(myseq) <- 'col'
+  if (res=="Loss")
+  {
+    loss[[x]] <- myseq$col
+  } else
+  {
+    win[[x]] <- myseq$col
+  }
 }
+loss <- Filter(Negate(function(x) is.null(unlist(x))), loss)
+win <- Filter(Negate(function(x) is.null(unlist(x))), win)
+
 
 ################# Using the rchess lib #################
 
-chesswc <- chess_df$Sequence %>% mutate(game_id = seq(nrow(.)))
-chess_df$game_id = as.numeric(chess_df$Date)
-
-pgn <- chess_df[1,8]
-#str_sub(pgn, 0, 50)
-
-chss <- Chess$new()
-chss$load_pgn(pgn)
-plot(chss)
-
-chss$moves(verbose=TRUE)
-chss$history(verbose=TRUE)
-
-x = chss$history_detail() %>%
-  arrange(number_move) %>% 
-  head(50)
-
+# chesswc <- chess_df$Sequence %>% mutate(game_id = seq(nrow(.)))
+# chess_df$game_id = as.numeric(chess_df$Date)
+# 
+# pgn <- chess_df[1,8]
+# #str_sub(pgn, 0, 50)
+# 
+# chss <- Chess$new()
+# chss$load_pgn(pgn)
+# plot(chss)
+# 
+# chss$moves(verbose=TRUE)
+# chss$history(verbose=TRUE)
+# 
+# x = chss$history_detail() %>%
+#   arrange(number_move) %>% 
+#   head(50)
+####################################################################
 
 
 # pgn <- system.file("chess.txt", package = "rchess")
